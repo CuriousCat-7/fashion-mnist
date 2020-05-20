@@ -162,6 +162,7 @@ if __name__ == '__main__':
         # early stopping and save best model
         if val_loss < best_loss:
             best_loss = val_loss
+            best_acc = val_acc
             patience = args.patience
             utils.save_model({
                 'arch': args.model,
@@ -171,6 +172,7 @@ if __name__ == '__main__':
             patience -= 1
             if patience == 0:
                 print('Run out of patience!')
+                print(f"best acc {val_acc}")
                 writeFile.close()
                 # tsboard.close()
                 break
