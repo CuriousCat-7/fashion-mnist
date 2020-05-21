@@ -19,6 +19,7 @@ parser.add_argument("--seed", type=int, default=1, help="random seed")
 parser.add_argument("--data", type=str, default='FashionMNIST', help="MNIST, or FashionMNIST")
 args = parser.parse_args()
 
+
 #viz
 # tsboard = SummaryWriter()
 
@@ -102,14 +103,21 @@ def run_model(net, loader, criterion, optimizer, train = True):
         optimizer.zero_grad()
 
         with torch.set_grad_enabled(train):
-            output = net(X)
-            _, pred = torch.max(output, 1)
-            loss = criterion(output, y)
+            if train:
+                for choice in net.random_shuffle:
+                    net.set_choice(choice)
+                    output = net(X)
+                    _, pred = torch.max(output, 1)
+                    loss = criterion(output, y)
+                    loss.backward()
+                    #torch.nn.utils.clip_grad_norm_(net.parameters(), GRAD_CLIP)
+                optimizer.step()
+            else:
+                net.set_choice(net.random_choice)
+                output = net(X)
+                _, pred = torch.max(output, 1)
+                loss = criterion(output, y)
 
-        # If on train backpropagate
-        if train:
-            loss.backward()
-            optimizer.step()
 
         # Calculate stats
         running_loss += loss.item()
@@ -121,8 +129,7 @@ def run_model(net, loader, criterion, optimizer, train = True):
 
 def main(net):
     # Init network, criterion and early stopping
-    flops_count , params_count = utils.get_model_complexity_info(
-        net, (1,28,28), False, False)
+    flops_count , params_count = None, None
     criterion = torch.nn.CrossEntropyLoss()
 
 

@@ -5,6 +5,7 @@ from torchvision import models
 import utils
 import math
 from torch.autograd import Variable
+from typing import List
 
 class FashionSimpleNet(nn.Module):
 
@@ -35,6 +36,109 @@ class FashionSimpleNet(nn.Module):
         return x
 
 
+class FashionComplexNet(nn.Module):
+
+    """  Complex network"""
+
+    def __init__(self):
+        super().__init__()
+        self.stem = nn.Sequential(
+            nn.Conv2d(1,32, kernel_size=3, padding=1), # 28
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2), # 14
+        )
+
+        self.mid = nn.ModuleList()
+        for i in range(10):
+            self.mid.append(
+                nn.Sequential(
+                    nn.Conv2d(32,32, kernel_size=3, padding=1), # 14
+                    nn.ReLU(inplace=True),
+                )
+            )
+
+        self.tail = nn.Sequential(
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2) # 7
+        )
+        self.classifier = nn.Sequential(
+            nn.Dropout(),
+            nn.Linear(64 * 7 * 7, 128),
+            nn.ReLU(inplace=True),
+            nn.Linear(128, 10)
+        )
+
+    def forward(self, x):
+        x = self.stem(x)
+        for layer in self.mid:
+            x = layer(x)
+        x = self.tail(x)
+        x = x.view(x.size(0), 64 * 7 * 7)
+        x = self.classifier(x)
+        return x
+
+
+class FashionComplexNetNas(nn.Module):
+
+    """  Complex network"""
+
+    def __init__(self):
+        super().__init__()
+        self.stem = nn.Sequential(
+            nn.Conv2d(1,32, kernel_size=3, padding=1), # 28
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2), # 14
+        )
+
+        self.mid = nn.ModuleList()
+        for i in range(10):
+            self.mid.append(
+                nn.ModuleList([
+                    nn.Sequential(
+                        nn.Conv2d(32,32, kernel_size=k, padding=(k-1)//2), # 14
+                        nn.ReLU(inplace=True),
+                    ) for k in (1,3,5)])
+            )
+
+        self.tail = nn.Sequential(
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2) # 7
+        )
+        self.classifier = nn.Sequential(
+            nn.Dropout(),
+            nn.Linear(64 * 7 * 7, 128),
+            nn.ReLU(inplace=True),
+            nn.Linear(128, 10)
+        )
+        self.choice  = None
+        self.nl = 10  # number of searchable layers
+        self.nb = 3  # number of blocks per layer
+
+    def set_choice(self, choice:list):
+        assert len(choice) == self.nl
+        assert max(choice) < self.nb
+        self.choice = choice
+
+    @property
+    def random_choice(self) -> List[int]:
+        return utils.random_choice(
+            self.nb, self.nl)
+
+    @property
+    def random_shuffle(self) -> List[List[int]]:
+        return utils.random_shuffle(
+            self.nb, self.nl)
+
+    def forward(self, x):
+        x = self.stem(x)
+        for layer, c in zip(self.mid, self.choice):
+            x = layer[c](x)
+        x = self.tail(x)
+        x = x.view(x.size(0), 64 * 7 * 7)
+        x = self.classifier(x)
+        return x
 
 
 
