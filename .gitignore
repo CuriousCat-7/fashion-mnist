@@ -102,6 +102,8 @@ ENV/
 
 data/
 saved-models/
+/saved-pops/
+/saved-*/
 logs/
 data-mnist/
 .DS_Store

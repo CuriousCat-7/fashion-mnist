@@ -78,6 +78,15 @@ class FashionComplexNet(nn.Module):
         x = self.classifier(x)
         return x
 
+    def forward_teach(self, x):
+        feas = []
+        x = self.stem(x)
+        feas.append(x)
+        for layer in self.mid:
+            x = layer(x)
+            feas.append(x)
+        return feas[:-1], feas[1:]
+
 
 class FashionComplexNetNas(nn.Module):
 
@@ -140,7 +149,32 @@ class FashionComplexNetNas(nn.Module):
         x = self.classifier(x)
         return x
 
+    def sample(self, choice):
+        mid = []
+        for layer, c in zip(self.mid, choice):
+            mid.append(layer[c])
+        mid = nn.Sequential(*mid)
 
+        class M(nn.Module):
+            def __init__(selff):
+                super().__init__()
+                selff.mid = mid
+                selff.stem = self.stem
+                selff.tail = self.tail
+                selff.classifier = self.classifier
+            def forward(selff, x):
+                return selff.classifier(selff.tail(selff.mid(selff.stem(x))).flatten(1))
+
+        return M()
+
+
+class FashionComplexNetDistillNas(FashionComplexNetNas):
+
+    def forward_distill(self, teacher_input:List[torch.Tensor]):
+        out = []
+        for layer, c, x in zip(self.mid, self.choice, teacher_input):
+            out.append( layer[c](x) )
+        return out
 
 
 ###############################################################################

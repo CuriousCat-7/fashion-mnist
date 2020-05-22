@@ -1,3 +1,5 @@
+# DistillNas
+我知道代码很难读，但我懒得整理
 # Zalando's MNIST fashion replacement
 This repo is archived.
 

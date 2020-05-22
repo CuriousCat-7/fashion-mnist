@@ -7,6 +7,7 @@ import time
 import argparse
 import os
 import csv
+from datetime import datetime
 # from tensorboardX import SummaryWriter
 
 parser = argparse.ArgumentParser()
@@ -135,15 +136,25 @@ def main(net):
 
 
     # Define optimizer
-    optimizer = optim.Adam(net.parameters())
+    #optimizer = optim.Adam(net.parameters())
+    comm_params = list(net.stem.parameters()) +\
+        list(net.tail.parameters()) +\
+        list(net.classifier.parameters())
+    nas_params = list(net.mid.parameters())
+    params = [
+        {"params": nas_params},
+        {"params": comm_params, "lr":1e-3/3},
+    ]
+    optimizer = optim.Adam(params)
 
     # Train the network
     patience = args.patience
     best_loss = 1e4
-    best_acc = 0.0
+    best_acc = 0
     writeFile = open('{}/stats.csv'.format(current_dir), 'a')
     writer = csv.writer(writeFile)
     writer.writerow(['Epoch', 'Train Loss', 'Train Accuracy', 'Validation Loss', 'Validation Accuracy'])
+    begin = datetime.now()
     for e in range(args.nepochs):
         start = time.time()
         train_loss, train_acc = run_model(net, train_loader,
@@ -169,7 +180,8 @@ def main(net):
         # Write to csv file
         writer.writerow([e+1, train_loss, train_acc.item(), val_loss, val_acc.item()])
         # early stopping and save best model
-        if  val_acc > best_acc:
+
+        if val_acc > best_acc:
             best_acc = val_acc.cpu().item()
 
         if val_loss < best_loss:
@@ -178,7 +190,7 @@ def main(net):
             utils.save_model({
                 'arch': args.model,
                 'state_dict': net.state_dict()
-            }, 'saved-models/{}-run-{}.pth.tar'.format(args.model, run))
+            }, 'saved-models/{}-train-{}.pth.tar'.format(args.model, run))
         else:
             patience -= 1
             if patience == 0:
@@ -190,7 +202,8 @@ def main(net):
         best_loss=best_loss,
         best_acc=best_acc,
         flops_count=flops_count,
-        params_count=params_count
+        params_count=params_count,
+        used_time = datetime.now() - begin
     )
     print(rst)
     return rst
