@@ -39,11 +39,18 @@ if __name__ == '__main__':
     supernet = get_supernet()
 
     # spawn
+    ra = torch.load("saved-pops/rand_pop_train_rst.pkl")
+    rand_rst = [ra[0][1], ra[1][1]]
     ga_pop = torch.load(args.pop_path)
     ga_X = np.array(list(map(lambda x: x.X, ga_pop))).tolist()
     ga_rst = pop2rst(ga_X, loader)
-    rand_X = [supernet.random_choice for i in range(100)]
-    rand_rst = pop2rst(rand_X, loader)
+    #rand_X = [supernet.random_choice for i in range(100)]
+    #rand_X = [supernet.random_choice for i in range(400)]
+    #rand_rst = pop2rst(rand_X, loader)
+    #ra = []
+    #for rX, rr in zip(rand_X, rand_rst):
+    #    ra.append( [rX, rr])
+    #torch.save(ra, "saved-pops/rand_pop_train_rst.pkl")
 
     logger.success(ga_rst)
     logger.success(rand_rst)

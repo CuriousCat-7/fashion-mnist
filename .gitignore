@@ -104,6 +104,7 @@ data/
 saved-models/
 /saved-pops/
 /saved-*/
+*.ipynb
 logs/
 data-mnist/
 .DS_Store

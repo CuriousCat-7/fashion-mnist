@@ -20,6 +20,7 @@ parser.add_argument("--batch_size", type=int, default=256, help="batch size")
 parser.add_argument("--nepochs", type=int, default=200, help="max epochs")
 parser.add_argument("--nworkers", type=int, default=4, help="number of workers")
 parser.add_argument("--seed", type=int, default=1, help="random seed")
+parser.add_argument("--n_gen", type=int, default=10)
 parser.add_argument("--data", type=str, default='FashionMNIST', help="MNIST, or FashionMNIST")
 args = parser.parse_args()
 
@@ -91,6 +92,7 @@ else:
 def run_model(teacher_net, net, loader, criterion, optimizer, train = True, is_search=False):
     running_loss = 0
     running_v_loss = 0
+    running_accuracy = 0
     teacher_net.eval()
 
     # Set mode
@@ -113,10 +115,10 @@ def run_model(teacher_net, net, loader, criterion, optimizer, train = True, is_s
                 optimizer.zero_grad()
                 for choice in net.random_shuffle:
                     net.set_choice(choice)
-                    student_oups = net.forward_distill(teacher_inps)
+                    student_oups, student_Ks = net.forward_distill(teacher_inps)
                     loss = 0
-                    for s_oup, t_oup in zip(student_oups, teacher_oups):
-                        loss += (s_oup - t_oup).pow(2).mean()
+                    for s_oup, t_oup, K in zip(student_oups, teacher_oups, student_Ks):
+                        loss += (s_oup - t_oup).pow(2).sum().div(K)
                     loss.backward()
                     #torch.nn.utils.clip_grad_norm_(net.parameters(), GRAD_CLIP)
                 optimizer.step()
@@ -124,17 +126,23 @@ def run_model(teacher_net, net, loader, criterion, optimizer, train = True, is_s
             else:
                 if not is_search:
                     net.set_choice(net.random_choice)
-                student_oups = net.forward_distill(teacher_inps)
+                student_oups, student_Ks = net.forward_distill(teacher_inps)
+                # loss
                 loss = 0
-                v_loss = 0
-                for s_oup, t_oup in zip(student_oups, teacher_oups):
-                    loss += (s_oup - t_oup).pow(2).mean()
-                    v_loss += (s_oup - t_oup).abs().mean().div(t_oup.std())
+                #v_loss = 0
+                for s_oup, t_oup, K in zip(student_oups, teacher_oups, student_Ks):
+                    loss += (s_oup - t_oup).pow(2).sum().div(K)
+                    #v_loss += (s_oup - t_oup).abs().mean().div(t_oup.std())
+                #  acc 2
+                output = net(X)
+                _, pred = torch.max(output, 1)
+                running_accuracy += torch.sum(pred == y.detach())
 
         # Calculate stats
         running_loss += loss.item()
-        running_v_loss += v_loss.item()
-    return running_loss / len(loader), running_v_loss / len(loader)
+        #running_v_loss += v_loss.item()
+    #return running_loss / len(loader), running_v_loss / len(loader)
+    return running_loss / len(loader), running_accuracy.double() / len(loader.dataset)
 
 
 
@@ -148,6 +156,7 @@ def main(net, teacher_net):
 
     # Define optimizer
     optimizer = optim.Adam(net.parameters())
+    #optimizer = optim.Adam(net.parameters(),1e-4)
 
     # Train the network
     patience = args.patience

@@ -106,13 +106,14 @@ if __name__ == "__main__":
         torch.load(args.load_path) ["state_dict"])
     teacher_net = model.__dict__[args.teacher_model]().to(device)
     teacher_net.load_state_dict(torch.load(args.teacher_path)["state_dict"])
+    print(args)
 
     problem = MyProblem(supernet, teacher_net)
 
     res = search(problem,
             pop_size=20,
             n_offsprings=10,
-            n_generations=10,
+            n_generations=args.n_gen,
             seed=123)
     X = np.array(list(map(lambda x: x.X, res.pop)))
     F = np.array(list(map(lambda x: x.F, res.pop)))
