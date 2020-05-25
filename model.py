@@ -187,7 +187,7 @@ class FashionComplexNetDistillNas(FashionComplexNetNas):
             out.append( layer[c](x) )
             Ks.append(utils.flops_counter.get_model_parameters_number(layer[c]))
         i += 1
-        out.append(self.tail(teacher_input[i]))
+        out.append(self.tail(teacher_input[i]).flatten(1))
         Ks.append(utils.flops_counter.get_model_parameters_number(self.tail))
         i += 1
         out.append(self.classifier(teacher_input[i]))

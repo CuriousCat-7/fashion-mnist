@@ -92,7 +92,7 @@ else:
 def run_model(teacher_net, net, loader, criterion, optimizer, train = True, is_search=False):
     running_loss = 0
     running_v_loss = 0
-    running_accuracy = 0
+    running_accuracy = torch.zeros(1)
     teacher_net.eval()
 
     # Set mode
@@ -118,7 +118,10 @@ def run_model(teacher_net, net, loader, criterion, optimizer, train = True, is_s
                     student_oups, student_Ks = net.forward_distill(teacher_inps)
                     loss = 0
                     for s_oup, t_oup, K in zip(student_oups, teacher_oups, student_Ks):
-                        loss += (s_oup - t_oup).pow(2).sum().div(K)
+                        try:
+                            loss += (s_oup - t_oup).pow(2).sum().div(K)
+                        except:
+                            import pdb; pdb.set_trace()
                     loss.backward()
                     #torch.nn.utils.clip_grad_norm_(net.parameters(), GRAD_CLIP)
                 optimizer.step()
@@ -142,7 +145,7 @@ def run_model(teacher_net, net, loader, criterion, optimizer, train = True, is_s
         running_loss += loss.item()
         #running_v_loss += v_loss.item()
     #return running_loss / len(loader), running_v_loss / len(loader)
-    return running_loss / len(loader), running_accuracy.double() / len(loader.dataset)
+    return running_loss / len(loader), running_accuracy.double().item() / len(loader.dataset)
 
 
 

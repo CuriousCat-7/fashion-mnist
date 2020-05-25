@@ -31,7 +31,7 @@ from loguru import logger
 def valid(net, teacher_net, loader):
     criterion = None
     _,  v_loss = run_model(teacher_net, net, loader, criterion, None, train=False, is_search=True)
-    return v_loss
+    return -v_loss
 
 
 def flops(net):
