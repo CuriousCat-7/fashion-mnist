@@ -1,5 +1,9 @@
 # DistillNas
 我知道代码很难读，但我懒得整理
+
+train -> search -> compare with random sampled architerctures
+
+
 # Zalando's MNIST fashion replacement
 This repo is archived.
 
