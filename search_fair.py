@@ -97,6 +97,8 @@ class MyProblem(Problem):
 
 
 if __name__ == "__main__":
+    if os.path.exists(args.pop_path):
+        logger.warning("pop_path {} already exists", args.pop_path)
     supernet = model.__dict__[args.model]().to(device)
     supernet.load_state_dict(
         torch.load(args.load_path) ["state_dict"])
@@ -114,4 +116,5 @@ if __name__ == "__main__":
     logger.info("get result")
     logger.success(F)
     os.makedirs("saved-pops", exist_ok=True)
-    torch.save(res.pop, "saved-pops/fair_pop.pkl")
+    #torch.save(res.pop, "saved-pops/fair_pop.pkl")
+    torch.save(res.pop, args.pop_path)

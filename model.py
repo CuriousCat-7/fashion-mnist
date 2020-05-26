@@ -100,16 +100,7 @@ class FashionComplexNetNas(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2), # 14
         )
 
-        self.mid = nn.ModuleList()
-        for i in range(10):
-            self.mid.append(
-                nn.ModuleList([
-                    nn.Sequential(
-                        nn.Conv2d(32,32, kernel_size=k, padding=(k-1)//2), # 14
-                        nn.ReLU(inplace=True),
-                    ) for k in (1,3,5)])
-            )
-
+        self.mid = self.get_mid()
         self.tail = nn.Sequential(
             nn.Conv2d(32, 64, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
@@ -123,12 +114,27 @@ class FashionComplexNetNas(nn.Module):
         )
         self.choice  = None
         self.nl = 10  # number of searchable layers
-        self.nb = 3  # number of blocks per layer
+
+    @property
+    def nb(self):
+        return 3  # number of blocks per layer
 
     def set_choice(self, choice:list):
         assert len(choice) == self.nl
         assert max(choice) < self.nb
         self.choice = choice
+
+    def get_mid(self):
+        mid = nn.ModuleList()
+        for i in range(10):
+            mid.append(
+                nn.ModuleList([
+                    nn.Sequential(
+                        nn.Conv2d(32,32, kernel_size=k, padding=(k-1)//2), # 14
+                        nn.ReLU(inplace=True),
+                    ) for k in (1,3,5)])
+            )
+        return mid
 
     @property
     def random_choice(self) -> List[int]:
@@ -149,9 +155,12 @@ class FashionComplexNetNas(nn.Module):
         x = self.classifier(x)
         return x
 
-    def sample(self, choice):
+    def sample(self, choice, remove_els=False):
         mid = []
         for layer, c in zip(self.mid, choice):
+            if remove_els:
+                if isinstance(layer[c], Conv2dELS):
+                    continue
             mid.append(layer[c])
         mid = nn.Sequential(*mid)
 
@@ -183,6 +192,35 @@ class FashionComplexNetDistillNas(FashionComplexNetNas):
 
         return out, Ks
 
+
+class Conv2dELS(nn.Conv2d):
+    def __init__(self, inp, oup):
+        super(Conv2dELS, self).__init__(inp, oup, kernel_size=1, bias=False)
+
+
+class FashionComplexNetDistillSCARLETNas(FashionComplexNetDistillNas):
+
+    def get_mid(self):
+        mid = nn.ModuleList()
+        for i in range(10):
+            mid.append(
+                nn.ModuleList([Conv2dELS(32,32)] + [
+                    nn.Sequential(
+                        nn.Conv2d(32,32, kernel_size=k, padding=(k-1)//2), # 14
+                        nn.ReLU(inplace=True),
+                    ) for k in (1,3,5)])
+            )
+        return mid
+
+    @property
+    def nb(self):
+        return 4
+
+class FashionComplexNetDistillSCARLETRandomNas(FashionComplexNetDistillNas):
+
+    @property
+    def random_shuffle(self) -> List[List[int]]:
+        return [utils.random_choice(self.nb, self.nl) for i in range(self.nb)]
 
 ###############################################################################
 #                                ResNet                                       #

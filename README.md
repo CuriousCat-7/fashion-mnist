@@ -9,6 +9,11 @@ train -> search -> compare with random sampled architerctures
 3. Distill in all epochs may lead to low performance
 4. Fine tune **may** be better than train from scratch
 
+## 推荐流程
+1. train supernet - search
+2. choose a speed range and train-with-finetune some of networks
+3. choose a better one
+
 
 # Zalando's MNIST fashion replacement
 This repo is archived.

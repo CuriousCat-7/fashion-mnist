@@ -13,7 +13,7 @@ def pop2rst(pop:List[List[int]], loader)-> Tuple[List[float]]:
     flops_list = []
     supernet = get_supernet()
     for i, choice in enumerate(pop):
-        net  = supernet.sample(choice)
+        net  = supernet.sample(choice, True)
         acc =  main(net)["best_acc"]
         ff = flops(net)/1e6
         acc_list.append(acc)

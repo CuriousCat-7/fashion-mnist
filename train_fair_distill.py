@@ -18,6 +18,7 @@ def get_args():
     # model
     parser.add_argument("--model", type=str, default='FashionComplexNet', help="model")
     parser.add_argument("--load-path", type=str, default="")
+    parser.add_argument("--output-path", type=str, default="")
     parser.add_argument("--teacher-model", type=str, default='FashionComplexNet', help="model")
     parser.add_argument("--teacher-path", type=str, required=True)
     # train params
@@ -274,7 +275,8 @@ def train_until_patience(args, run_model, run):
         if val_acc > best_acc:
             best_acc = val_acc.cpu().item()
 
-        model_path = 'saved-models/{}-train-{}.pth.tar'.format(args.model, run)
+        #model_path = 'saved-models/{}-train-{}.pth.tar'.format(args.model, run)
+        model_path=args.output_path
         if val_loss < best_loss:
             best_loss = val_loss
             patience = args.patience
@@ -301,6 +303,8 @@ def train_until_patience(args, run_model, run):
 
 
 def main(args):
+    if os.path.exists(args.output_path):
+        logger.warning('output-path {} already exists', args.output_path)
     device = get_device()
     current_dir, run = setup(args)
     train_loader, val_loader = get_loader(args)
