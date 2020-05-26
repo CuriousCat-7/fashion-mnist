@@ -3,6 +3,12 @@
 
 train -> search -> compare with random sampled architerctures
 
+## Experiemental Conclusions
+1. FairNas may takes N(N-1) times to train to converge the supernet
+2. Distill in early epochs can really help
+3. Distill in all epochs may lead to low performance
+4. Fine tune **may** be better than train from scratch
+
 
 # Zalando's MNIST fashion replacement
 This repo is archived.
