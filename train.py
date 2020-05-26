@@ -21,6 +21,7 @@ parser.add_argument("--data", type=str, default='FashionMNIST', help="MNIST, or 
 parser.add_argument("--load-path", type=str, default="")
 parser.add_argument("--pop-path", type=str, default="")
 parser.add_argument("--use-pretrained", action="store_true", default=False)
+parser.add_argument("--suffix", type=str, default="")
 args = parser.parse_args()
 
 #viz
@@ -119,8 +120,6 @@ def run_model(net, loader, criterion, optimizer, train = True):
         running_loss += loss.item()
         running_accuracy += torch.sum(pred == y.detach())
     return running_loss / len(loader), running_accuracy.double() / len(loader.dataset)
-
-
 
 
 def main(net):

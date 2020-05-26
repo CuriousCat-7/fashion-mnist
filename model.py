@@ -80,17 +80,11 @@ class FashionComplexNet(nn.Module):
 
     def forward_teach(self, x):
         feas = []
-        feas.append(x)
         x = self.stem(x)
         feas.append(x)
         for layer in self.mid:
             x = layer(x)
             feas.append(x)
-        x = self.tail(x)
-        x = x.flatten(1)
-        feas.append(x)
-        x = self.classifier(x)
-        feas.append(x)
         return feas[:-1], feas[1:]
 
 
@@ -176,22 +170,16 @@ class FashionComplexNetNas(nn.Module):
 
 class FashionComplexNetDistillNas(FashionComplexNetNas):
 
+    def get_K_table(self):
+        pass  # TODO quick K
+
     def forward_distill(self, teacher_input:List[torch.Tensor]):
         out = []
         Ks = []
-        out.append(self.stem(teacher_input[0]))
-        Ks.append(utils.flops_counter.get_model_parameters_number(self.stem))
-        teacher_input = teacher_input[1:]
         for layer, c, i in zip(self.mid, self.choice, range(len(self.choice))):
             x = teacher_input[i]
             out.append( layer[c](x) )
             Ks.append(utils.flops_counter.get_model_parameters_number(layer[c]))
-        i += 1
-        out.append(self.tail(teacher_input[i]).flatten(1))
-        Ks.append(utils.flops_counter.get_model_parameters_number(self.tail))
-        i += 1
-        out.append(self.classifier(teacher_input[i]))
-        Ks.append(utils.flops_counter.get_model_parameters_number(self.classifier))
 
         return out, Ks
 

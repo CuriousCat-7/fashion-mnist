@@ -29,6 +29,7 @@ def get_supernet():
     np.random.seed(123)
     supernet = model.__dict__[args.model]().to(device)
     if args.use_pretrained:
+        logger.info("using pretrained model {}", args.load_path)
         supernet.load_state_dict(
             torch.load(args.load_path) ["state_dict"])
     return supernet
@@ -56,7 +57,9 @@ if __name__ == '__main__':
     logger.success(rand_rst)
     # draw
     names = ["Acc", "Flops(M)"]
-    suffix = "-use_pretrained" if args.use_pretrained else ""
+    suffix = f"{args.suffix}"
+    if args.use_pretrained:
+        suffix += "-pretrained"
     title =  f"FairNas-{args.model}{suffix}"
     plt.scatter(np.array(ga_rst[0]), np.array(ga_rst[1]), c="red", alpha=0.6)
     plt.scatter(np.array(rand_rst[0]), np.array(rand_rst[1]), c="green", alpha=0.6)
